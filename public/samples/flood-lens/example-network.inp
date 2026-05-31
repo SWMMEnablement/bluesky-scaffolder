@@ -1,0 +1,64 @@
+[TITLE]
+BlueSky-ICM FloodLens example network — 12 junctions, 2 subcatchments
+
+[OPTIONS]
+FLOW_UNITS            CMS
+INFILTRATION          CURVE_NUMBER
+FLOW_ROUTING          DYNWAVE
+START_DATE            01/01/2025
+START_TIME            00:00:00
+END_DATE              01/01/2025
+END_TIME              12:00:00
+REPORT_STEP           00:05:00
+WET_STEP              00:01:00
+DRY_STEP              01:00:00
+ROUTING_STEP          0:00:30
+
+[RAINGAGES]
+;;Name  Format     Interval  SCF  Source
+RG1     INTENSITY  0:05      1.0  TIMESERIES  STORM-100YR
+
+[SUBCATCHMENTS]
+;;Name  Raingage  Outlet   Area  %Imperv  Width   Slope  CurbLen
+S-01    RG1       N-0508   12.5  68       420     1.2    0
+S-02    RG1       N-0822   18.0  54       510     0.9    0
+
+[INFILTRATION]
+;;Subcat  CurveNum  -  DryTime
+S-01      82        0.5  5
+S-02      78        0.5  5
+
+[JUNCTIONS]
+;;Name    Invert  MaxDepth  InitDepth
+N-0421    12.00   2.0       0
+N-0422    11.20   2.0       0
+N-0508     9.50   2.5       0
+N-0612     9.00   2.0       0
+N-0617     9.00   2.0       0
+N-0721     8.00   2.0       0
+N-0822     6.00   2.5       0
+N-0901     7.00   2.0       0
+N-0908     6.00   2.0       0
+N-0911     3.00   3.0       0
+N-1004     4.00   2.0       0
+N-1110     3.00   2.0       0
+
+[OUTFALLS]
+;;Name  Invert  Type
+OUT1    2.00    FREE
+
+[CONDUITS]
+;;Name    From      To        Length  Roughness  InOffset  OutOffset
+C-0421    N-0421    N-0508    220     0.013      0         0
+C-0508    N-0508    N-0612    180     0.013      0         0
+C-0911    N-0911    OUT1      150     0.013      0         0
+
+[TIMESERIES]
+;;Name        Time   Value (mm/hr)
+STORM-100YR   0:00   0
+STORM-100YR   0:30   24
+STORM-100YR   1:00   88
+STORM-100YR   1:30   42
+STORM-100YR   2:00   18
+STORM-100YR   3:00   6
+STORM-100YR   6:00   0
