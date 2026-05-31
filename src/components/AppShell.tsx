@@ -75,8 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
         </div>
       </footer>
+      <Toaster />
     </div>
   );
 }
-
-export type { ReactNode };
