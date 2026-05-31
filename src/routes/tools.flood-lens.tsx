@@ -106,8 +106,61 @@ function FloodLensPage() {
       <ToolPageHeader index={tool.index} tag={tool.tag} name={tool.name} pitch={tool.description} />
 
       <section className="mx-auto max-w-7xl px-6 py-8 space-y-6">
+        <Panel
+          title="Ingest SWMM5 .rpt"
+          meta={rptMeta ? `${rptMeta.name} · ${rptMeta.matched} matched · continuity ${rptMeta.continuity.toFixed(2)}%` : "No file loaded — using seed depths"}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".rpt,text/plain"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleRptFile(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={loadingRpt}
+              className="inline-flex items-center gap-1.5 rounded border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-primary hover:bg-primary/20 disabled:opacity-50"
+            >
+              <Upload className="size-3.5" />
+              {loadingRpt ? "Parsing…" : "Upload .rpt"}
+            </button>
+            <a
+              href="/samples/flood-lens/example-network.rpt"
+              download
+              className="inline-flex items-center gap-1.5 rounded border border-border bg-secondary/40 px-3 py-1.5 text-xs font-mono uppercase tracking-wider hover:bg-secondary"
+            >
+              <FileDown className="size-3.5" /> Sample .rpt
+            </a>
+            <a
+              href="/samples/flood-lens/example-network.inp"
+              download
+              className="inline-flex items-center gap-1.5 rounded border border-border bg-secondary/40 px-3 py-1.5 text-xs font-mono uppercase tracking-wider hover:bg-secondary"
+            >
+              <FileDown className="size-3.5" /> Sample .inp
+            </a>
+            {rptMeta && (
+              <button
+                onClick={resetToMock}
+                className="inline-flex items-center gap-1.5 rounded border border-border bg-background px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="size-3.5" /> Reset
+              </button>
+            )}
+            <p className="ml-auto text-[10px] font-mono text-muted-foreground">
+              Parsed in-browser. Files never leave your machine. Buildings matched by{" "}
+              <code className="text-foreground">nodeId</code>.
+            </p>
+          </div>
+        </Panel>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiTile label="Buildings in extent" value={String(summary.total)} delta={`of ${MOCK_BUILDINGS.length} total`} />
+          <KpiTile label="Buildings in extent" value={String(summary.total)} delta={`of ${buildings.length} total`} />
           <KpiTile
             label="Significant or worse"
             value={String(summary.byHazard.significant + summary.byHazard.extreme)}
