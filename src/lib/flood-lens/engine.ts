@@ -9,6 +9,8 @@ export type HazardRating = "low" | "moderate" | "significant" | "extreme";
 
 export type BuildingAssessment = {
   id: string;
+  /** SWMM node id this building is sampled from. Used to merge .rpt results. */
+  nodeId: string;
   use: "residential" | "commercial" | "industrial" | "critical";
   /** Floor area, m². */
   area: number;
