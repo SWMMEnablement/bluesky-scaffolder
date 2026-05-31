@@ -1,53 +1,107 @@
+# Real SWMM5 Engine Integration
 
-# BlueSky-ICM — Plan
+Move every tool off hand-authored mocks and onto a single, swappable
+`SwmmProvider` interface. ModelDiff and RainLab get **real compute now**
+(pure JS parsing + a SWMM5 WASM run). Calibration, FloodLens, and
+ScenarioStudio sit behind the same interface returning typed stub results
+until the WASM run loop is wired through them.
 
-A hub for 5 speculative tools that wrap around SWMM5 / InfoWorks ICM workflows. Audience: hydraulic modelers. Each tool is a real route with a working UI and mock data; the solver / file-format adapters are stubbed behind a clear seam so real compute can drop in later.
+All compute runs **in the browser**. No backend, no Cloudflare Worker
+involvement, no uploads. `.inp` / `.rpt` / `.out` files are picked from
+disk and never leave the user's machine.
 
-## The 5 tools
+## 1. Provider interface (single seam)
 
-1. **ModelDiff** — Visual diff between two SWMM `.inp` (or ICM IEDB export) versions. Side-by-side network map, change list (conduits, subcatchments, controls), and a "what would this change to the hydraulics" summary. Modelers waste hours doing this in text editors today.
+New file `src/lib/swmm/provider.ts` defines the contract every tool calls:
 
-2. **RainLab** — Design-storm + ensemble rainfall generator. Build Chicago / NRCS / Huff / user-defined hyetographs, layer climate-change uplift factors, export as SWMM time series or ICM rainfall events. Live hyetograph + cumulative depth chart.
-
-3. **CalibrationCopilot** — Loads observed gauge data (flow / depth / level) alongside a simulated run, computes NSE / KGE / PBIAS / R² per gauge, and suggests parameter nudges (roughness, % imperv, initial losses) with sensitivity bars. Think "Copilot for calibration", not a black-box optimizer.
-
-4. **FloodLensAI** — Upload a 2D results raster (or ICM mesh result) + a building footprint layer, get per-building depth, duration, hazard rating (DEFRA / FEMA) and a damage curve estimate. Map view with filter chips and a CSV/GeoJSON export.
-
-5. **ScenarioStudio** — Compare N model scenarios (baseline vs. SUDS retrofit vs. pipe upsize vs. climate 2050) on one dashboard: peak flows, flood volume, CSO spills, cost per m³ avoided. Drag scenarios in, pick KPIs, get a shareable report.
-
-## App shape
-
-```
-/                       Hub: hero + 5 tool cards + "why blue-sky" note
-/tools/model-diff
-/tools/rain-lab
-/tools/calibration-copilot
-/tools/flood-lens
-/tools/scenario-studio
+```ts
+interface SwmmProvider {
+  parseInp(file: File): Promise<InpModel>          // pure JS
+  runSimulation(inp: InpModel, opts?): Promise<SwmmRun>  // WASM
+  readRpt(rpt: ArrayBuffer): RptSummary            // pure JS
+  readOut(out: ArrayBuffer): OutTimeseries         // pure JS (binary)
+  capabilities: { calibration: boolean; flood2D: boolean; scenarios: boolean }
+}
 ```
 
-Shared shell: top nav with logo + Tools dropdown + GitHub-style "Concept" badge. Each tool route has: header (name, one-line pitch, status pill "Concept"), main interactive panel with mock data, and a "How this would plug into SWMM/ICM" footer block describing the real-compute seam.
+Two implementations:
+- `WasmSwmmProvider` — loads `/wasm/swmm5_bg.wasm` lazily on first call.
+- `StubSwmmProvider` — current mock data, used as fallback + for the
+  three heavier tools until their pipelines are real.
 
-## Build sequence
+A tiny `getProvider()` factory returns Wasm when available, else stub.
+Tools never import either directly.
 
-1. **Design directions** — run `design--create_directions` for the hub + a representative tool screen (ScenarioStudio, since it's the most visually loaded). User picks one direction; tokens get copied into `src/styles.css` verbatim. All 5 tools inherit those tokens.
-2. **Shell + hub** — `__root.tsx` gets the top nav; `routes/index.tsx` becomes the hub with 5 tool cards, each linking to its route. SEO `head()` per route.
-3. **Scaffold all 5 tool routes** in parallel — each with realistic mock data, working interactions (charts, maps, tables, filters), and a stubbed `lib/<tool>/engine.ts` module exporting typed functions like `runDiff(inpA, inpB)` that currently return mock results. This is the seam.
-4. **Polish pass** — slop-sweep (remove default CTAs, generic icons, etc.), verify every route renders, check console.
+## 2. WASM runtime
 
-## Technical details
+- Vendor an existing emscripten build of SWMM5 (e.g. `swmm5-js` /
+  `pyswmm-wasm`-style artifact). Binary goes to `public/wasm/swmm5.wasm`,
+  glue JS to `src/lib/swmm/wasm/` per the WASM rules (client-only, never
+  imported from route loaders or server fns).
+- Tiny TS wrapper exposing `runFromInpString(text): { rpt, out }` via
+  Emscripten MEMFS — we write the `.inp` to a virtual FS, call
+  `swmm_run`, then read back `report.rpt` and `output.out`.
+- Lazy-loaded on the first `runSimulation` call so the hub page stays
+  light.
 
-- Routing: TanStack Start file routes under `src/routes/tools/*.tsx`, hub at `src/routes/index.tsx`. Per-route `head()` with unique title/description/og:title/og:description.
-- Charts: Recharts (already in shadcn chart wrapper) for hyetographs, KPI bars, calibration scatter.
-- Maps: lightweight SVG mock "network map" for ModelDiff and FloodLens — no real GIS dep yet. Real Leaflet/Maplibre swap is a later step; engine seam includes a `getMapData()` shape.
-- Mock data: hand-authored JSON in `src/lib/<tool>/mock.ts` that matches the shape the real adapter will return — so swapping in a real `.inp` parser later is a drop-in.
-- File upload UI: real `<input type="file">` with a parser stub that currently ignores the file and returns mock data; toast says "Concept build — using sample data."
-- No backend in this pass. No Lovable Cloud. Compute hooks documented inline so a future pass can add server functions for parsing/solving.
-- Tokens / theme: chosen design direction's CSS variables go into `src/styles.css`. No hard-coded colors in components.
+## 3. Pure-JS parsers
 
-## Out of scope (intentionally)
+`src/lib/swmm/inp.ts` — section-aware `.inp` parser producing `InpModel`
+(subcatchments, junctions, conduits, options, timeseries, raingages,
+inflows). Used by ModelDiff and as input to the WASM runner.
 
-- Real SWMM5 binary execution or `.inp` parsing
-- Real raster / mesh ingestion
-- Auth, persistence, sharing
-- Mobile layouts beyond "doesn't break"
+`src/lib/swmm/rpt.ts` — `.rpt` text parser for continuity errors,
+node/link summaries, runoff totals.
+
+`src/lib/swmm/out.ts` — binary `.out` reader using a `DataView` over
+`ArrayBuffer` (SWMM5 binary spec: ID table → object properties →
+reporting variables → computed results → closing records). Streams
+node/link/subcatchment timeseries on demand.
+
+## 4. Per-tool wiring
+
+| Tool | Real compute now | Source of truth |
+|---|---|---|
+| **ModelDiff** | yes | `parseInp(A)` + `parseInp(B)` → structural diff (added/removed/modified elements, parameter deltas). Replaces `lib/model-diff/engine.ts` mock entirely. |
+| **RainLab** | yes (already pure math) | Move synthetic hyetograph generators behind the provider's `buildHyetogram` so the SWMM `[TIMESERIES]` export round-trips through `inp.ts`. Adds a "Run in SWMM" button that pipes the storm into `runSimulation` against a tiny demo `.inp` and renders the resulting runoff hydrograph from the real `.out`. |
+| **CalibrationCopilot** | stub (interface-real) | Accepts observed CSV + model `.inp`, but `runCalibration` returns mock NSE/KGE with a banner "WASM run loop pending — uses sample run". When user supplies their own `.inp`, we DO run it once via WASM and show the real simulated hydrograph beside observed; the parameter-nudge logic stays mocked. |
+| **FloodLensAI** | stub | No raster engine in scope. Tool now consumes real node max-depth/flooded-volume from `readRpt` when a user drops an `.rpt`; building-level damage curves stay synthetic. |
+| **ScenarioStudio** | stub | Accepts N `.inp` variants, runs each through `runSimulation` sequentially, and renders real hydrograph overlays from `.out`. Cost/trade-off chart stays mock until users provide cost inputs. |
+
+Each tool route gets a `<ProviderBadge>` (small pill in the header)
+showing `WASM` / `Stub` / `Hybrid` so engineers know which numbers are
+real.
+
+## 5. File handling
+
+- Native `<input type="file" accept=".inp,.rpt,.out">` everywhere.
+- Files are read with `file.arrayBuffer()` / `file.text()` and passed to
+  parsers. Nothing is uploaded, persisted, or sent over the network.
+- A shared `useSwmmFile()` hook centralizes pick/parse/error handling.
+
+## 6. Compute seam UI
+
+The existing `ComputeSeam` footer is updated to describe what's now
+real vs stubbed per tool, with a link to the provider source. The hub
+gets a small "Engine: SWMM5 (WASM, in-browser)" status line.
+
+## Technical notes
+
+- WASM file MUST live under `public/wasm/` and load only from
+  client-only code; never import `.wasm` in route loaders, server fns,
+  or `__root.tsx`.
+- `.out` parsing is non-trivial — implement read-by-offset with the
+  closing-records pointer table; cache parsed metadata per file.
+- Heavy parsers and the WASM module are loaded via dynamic
+  `import()` inside `WasmSwmmProvider` to keep the hub bundle small.
+- All existing `src/lib/<tool>/engine.ts` mock files stay on disk as
+  the `StubSwmmProvider` data source — no duplication.
+- Toast on parse/run failure via the existing sonner setup.
+
+## Out of scope
+
+- ICM / Exchange integration.
+- Real 2D flood raster / mesh ingestion.
+- Backend, uploads, persistence, auth.
+- Real calibration optimizer loop and real cost modeling.
+- Mobile-specific layout work.
