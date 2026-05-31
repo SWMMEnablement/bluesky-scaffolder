@@ -1,5 +1,5 @@
-import { Link, useRouterState, type ReactNode } from "@tanstack/react-router";
-import { type ReactNode as RN } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { type ReactNode } from "react";
 
 const tools = [
   { slug: "model-diff", label: "ModelDiff" },
