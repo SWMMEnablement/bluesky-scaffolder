@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 const tools = [
   { slug: "model-diff", label: "ModelDiff" },
