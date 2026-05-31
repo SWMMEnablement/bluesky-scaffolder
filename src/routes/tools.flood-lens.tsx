@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { getTool } from "@/lib/tools/registry";
-import { ComputeSeam, KpiTile, Panel, StatusPill, ToolPageHeader } from "@/components/tool-kit";
+import { ComputeSeam, KpiTile, Panel, ToolPageHeader } from "@/components/tool-kit";
 import {
   hazardColor,
   hazardOrder,
