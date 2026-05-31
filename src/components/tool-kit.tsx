@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { ProviderBadge } from "./provider-badge";
 
 export function ToolPageHeader({
   index,
@@ -14,14 +15,12 @@ export function ToolPageHeader({
   return (
     <div className="border-b border-border bg-surface">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="text-xs font-mono text-muted-foreground">/ {index}</span>
           <span className="rounded bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider">
             {tag}
           </span>
-          <span className="rounded bg-accent/15 text-accent border border-accent/30 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider">
-            Concept
-          </span>
+          <ProviderBadge />
         </div>
         <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tighter mb-3">
           {name}
@@ -62,20 +61,22 @@ export function Panel({
   );
 }
 
-export function ComputeSeam({ note }: { note: string }) {
+export function ComputeSeam({ note, real }: { note: string; real?: string }) {
   return (
     <div className="mx-auto max-w-7xl px-6 pb-16">
       <div className="rounded-lg border border-dashed border-border bg-background p-5">
         <div className="flex items-center gap-2 mb-2">
-          <span className="size-1.5 rounded-full bg-warning" />
+          <span className="size-1.5 rounded-full bg-primary" />
           <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-            How this plugs into SWMM / ICM
+            Engine wiring
           </span>
         </div>
-        <p className="text-sm text-foreground/80 leading-relaxed">{note}</p>
+        {real && <p className="text-sm text-foreground/90 leading-relaxed mb-2">{real}</p>}
+        <p className="text-xs text-muted-foreground leading-relaxed">{note}</p>
         <p className="text-xs font-mono text-muted-foreground mt-3">
-          Today this screen runs on hand-crafted mock data — the engine seam lives in
-          <code className="mx-1 rounded bg-secondary px-1 py-0.5">src/lib/&lt;tool&gt;/engine.ts</code>.
+          Provider seam:
+          <code className="mx-1 rounded bg-secondary px-1 py-0.5">src/lib/swmm/provider.ts</code>
+          · drop <code className="mx-1 rounded bg-secondary px-1 py-0.5">public/wasm/swmm5.wasm</code> to upgrade to the full SWMM5 solver.
         </p>
       </div>
     </div>
