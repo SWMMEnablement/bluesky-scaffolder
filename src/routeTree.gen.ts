@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ToolsScenarioStudioRouteImport } from './routes/tools.scenario-studio'
+import { Route as ToolsRainLabRouteImport } from './routes/tools.rain-lab'
+import { Route as ToolsModelDiffRouteImport } from './routes/tools.model-diff'
+import { Route as ToolsFloodLensRouteImport } from './routes/tools.flood-lens'
+import { Route as ToolsCalibrationCopilotRouteImport } from './routes/tools.calibration-copilot'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ToolsScenarioStudioRoute = ToolsScenarioStudioRouteImport.update({
+  id: '/tools/scenario-studio',
+  path: '/tools/scenario-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRainLabRoute = ToolsRainLabRouteImport.update({
+  id: '/tools/rain-lab',
+  path: '/tools/rain-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsModelDiffRoute = ToolsModelDiffRouteImport.update({
+  id: '/tools/model-diff',
+  path: '/tools/model-diff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsFloodLensRoute = ToolsFloodLensRouteImport.update({
+  id: '/tools/flood-lens',
+  path: '/tools/flood-lens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsCalibrationCopilotRoute = ToolsCalibrationCopilotRouteImport.update({
+  id: '/tools/calibration-copilot',
+  path: '/tools/calibration-copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/tools/calibration-copilot': typeof ToolsCalibrationCopilotRoute
+  '/tools/flood-lens': typeof ToolsFloodLensRoute
+  '/tools/model-diff': typeof ToolsModelDiffRoute
+  '/tools/rain-lab': typeof ToolsRainLabRoute
+  '/tools/scenario-studio': typeof ToolsScenarioStudioRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/tools/calibration-copilot': typeof ToolsCalibrationCopilotRoute
+  '/tools/flood-lens': typeof ToolsFloodLensRoute
+  '/tools/model-diff': typeof ToolsModelDiffRoute
+  '/tools/rain-lab': typeof ToolsRainLabRoute
+  '/tools/scenario-studio': typeof ToolsScenarioStudioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/tools/calibration-copilot': typeof ToolsCalibrationCopilotRoute
+  '/tools/flood-lens': typeof ToolsFloodLensRoute
+  '/tools/model-diff': typeof ToolsModelDiffRoute
+  '/tools/rain-lab': typeof ToolsRainLabRoute
+  '/tools/scenario-studio': typeof ToolsScenarioStudioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/tools/calibration-copilot'
+    | '/tools/flood-lens'
+    | '/tools/model-diff'
+    | '/tools/rain-lab'
+    | '/tools/scenario-studio'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/tools/calibration-copilot'
+    | '/tools/flood-lens'
+    | '/tools/model-diff'
+    | '/tools/rain-lab'
+    | '/tools/scenario-studio'
+  id:
+    | '__root__'
+    | '/'
+    | '/tools/calibration-copilot'
+    | '/tools/flood-lens'
+    | '/tools/model-diff'
+    | '/tools/rain-lab'
+    | '/tools/scenario-studio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ToolsCalibrationCopilotRoute: typeof ToolsCalibrationCopilotRoute
+  ToolsFloodLensRoute: typeof ToolsFloodLensRoute
+  ToolsModelDiffRoute: typeof ToolsModelDiffRoute
+  ToolsRainLabRoute: typeof ToolsRainLabRoute
+  ToolsScenarioStudioRoute: typeof ToolsScenarioStudioRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +117,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tools/scenario-studio': {
+      id: '/tools/scenario-studio'
+      path: '/tools/scenario-studio'
+      fullPath: '/tools/scenario-studio'
+      preLoaderRoute: typeof ToolsScenarioStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/rain-lab': {
+      id: '/tools/rain-lab'
+      path: '/tools/rain-lab'
+      fullPath: '/tools/rain-lab'
+      preLoaderRoute: typeof ToolsRainLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/model-diff': {
+      id: '/tools/model-diff'
+      path: '/tools/model-diff'
+      fullPath: '/tools/model-diff'
+      preLoaderRoute: typeof ToolsModelDiffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/flood-lens': {
+      id: '/tools/flood-lens'
+      path: '/tools/flood-lens'
+      fullPath: '/tools/flood-lens'
+      preLoaderRoute: typeof ToolsFloodLensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools/calibration-copilot': {
+      id: '/tools/calibration-copilot'
+      path: '/tools/calibration-copilot'
+      fullPath: '/tools/calibration-copilot'
+      preLoaderRoute: typeof ToolsCalibrationCopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ToolsCalibrationCopilotRoute: ToolsCalibrationCopilotRoute,
+  ToolsFloodLensRoute: ToolsFloodLensRoute,
+  ToolsModelDiffRoute: ToolsModelDiffRoute,
+  ToolsRainLabRoute: ToolsRainLabRoute,
+  ToolsScenarioStudioRoute: ToolsScenarioStudioRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
