@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Download, Upload } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, FileDown, RotateCcw, Upload } from "lucide-react";
 import { getTool } from "@/lib/tools/registry";
 import { ComputeSeam, KpiTile, Panel, ToolPageHeader } from "@/components/tool-kit";
 import {
   hazardColor,
   hazardOrder,
   MOCK_BUILDINGS,
+  mergeRptIntoBuildings,
   summarize,
   type BuildingAssessment,
   type HazardRating,
