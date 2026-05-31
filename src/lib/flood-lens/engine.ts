@@ -61,24 +61,56 @@ function damage(use: BuildingAssessment["use"], depthM: number, area: number): n
 }
 
 const SEED: Omit<BuildingAssessment, "hazard" | "damageGbp">[] = [
-  { id: "B-0421", use: "residential", area: 120, maxDepthM: 0.35, durationMin: 95, velocityMs: 0.4, x: 18, y: 32 },
-  { id: "B-0422", use: "residential", area: 110, maxDepthM: 0.62, durationMin: 140, velocityMs: 0.6, x: 22, y: 38 },
-  { id: "B-0508", use: "commercial", area: 640, maxDepthM: 1.1, durationMin: 220, velocityMs: 0.9, x: 35, y: 44 },
-  { id: "B-0612", use: "critical", area: 1800, maxDepthM: 0.9, durationMin: 180, velocityMs: 1.1, x: 48, y: 52 },
-  { id: "B-0617", use: "residential", area: 95, maxDepthM: 0.15, durationMin: 40, velocityMs: 0.2, x: 55, y: 30 },
-  { id: "B-0721", use: "industrial", area: 2200, maxDepthM: 0.7, durationMin: 160, velocityMs: 0.5, x: 62, y: 60 },
-  { id: "B-0822", use: "commercial", area: 410, maxDepthM: 1.6, durationMin: 280, velocityMs: 1.4, x: 70, y: 48 },
-  { id: "B-0901", use: "residential", area: 140, maxDepthM: 0.05, durationMin: 20, velocityMs: 0.1, x: 78, y: 35 },
-  { id: "B-0908", use: "residential", area: 130, maxDepthM: 0.42, durationMin: 110, velocityMs: 0.5, x: 30, y: 64 },
-  { id: "B-0911", use: "commercial", area: 540, maxDepthM: 2.1, durationMin: 320, velocityMs: 1.6, x: 44, y: 70 },
-  { id: "B-1004", use: "residential", area: 100, maxDepthM: 0.25, durationMin: 60, velocityMs: 0.3, x: 60, y: 74 },
-  { id: "B-1110", use: "critical", area: 900, maxDepthM: 0.3, durationMin: 70, velocityMs: 0.4, x: 80, y: 68 },
+  { id: "B-0421", nodeId: "N-0421", use: "residential", area: 120, maxDepthM: 0.35, durationMin: 95, velocityMs: 0.4, x: 18, y: 32 },
+  { id: "B-0422", nodeId: "N-0422", use: "residential", area: 110, maxDepthM: 0.62, durationMin: 140, velocityMs: 0.6, x: 22, y: 38 },
+  { id: "B-0508", nodeId: "N-0508", use: "commercial", area: 640, maxDepthM: 1.1, durationMin: 220, velocityMs: 0.9, x: 35, y: 44 },
+  { id: "B-0612", nodeId: "N-0612", use: "critical", area: 1800, maxDepthM: 0.9, durationMin: 180, velocityMs: 1.1, x: 48, y: 52 },
+  { id: "B-0617", nodeId: "N-0617", use: "residential", area: 95, maxDepthM: 0.15, durationMin: 40, velocityMs: 0.2, x: 55, y: 30 },
+  { id: "B-0721", nodeId: "N-0721", use: "industrial", area: 2200, maxDepthM: 0.7, durationMin: 160, velocityMs: 0.5, x: 62, y: 60 },
+  { id: "B-0822", nodeId: "N-0822", use: "commercial", area: 410, maxDepthM: 1.6, durationMin: 280, velocityMs: 1.4, x: 70, y: 48 },
+  { id: "B-0901", nodeId: "N-0901", use: "residential", area: 140, maxDepthM: 0.05, durationMin: 20, velocityMs: 0.1, x: 78, y: 35 },
+  { id: "B-0908", nodeId: "N-0908", use: "residential", area: 130, maxDepthM: 0.42, durationMin: 110, velocityMs: 0.5, x: 30, y: 64 },
+  { id: "B-0911", nodeId: "N-0911", use: "commercial", area: 540, maxDepthM: 2.1, durationMin: 320, velocityMs: 1.6, x: 44, y: 70 },
+  { id: "B-1004", nodeId: "N-1004", use: "residential", area: 100, maxDepthM: 0.25, durationMin: 60, velocityMs: 0.3, x: 60, y: 74 },
+  { id: "B-1110", nodeId: "N-1110", use: "critical", area: 900, maxDepthM: 0.3, durationMin: 70, velocityMs: 0.4, x: 80, y: 68 },
 ];
 
 export const MOCK_BUILDINGS: BuildingAssessment[] = SEED.map((b) => {
   const hazard = classify(b.maxDepthM, b.velocityMs);
   return { ...b, hazard, damageGbp: damage(b.use, b.maxDepthM, b.area) };
 });
+
+/**
+ * Merge real .rpt node depths/flood durations into the building list.
+ * Buildings whose nodeId is present in the rpt are updated; others are
+ * preserved as-is so the map still renders.
+ */
+export function mergeRptIntoBuildings(
+  buildings: BuildingAssessment[],
+  rpt: { nodes: { id: string; maxDepthM: number; floodedHours: number }[] }
+): { merged: BuildingAssessment[]; matched: number } {
+  const byNode = new Map(rpt.nodes.map((n) => [n.id, n]));
+  let matched = 0;
+  const merged = buildings.map((b) => {
+    const n = byNode.get(b.nodeId);
+    if (!n) return b;
+    matched++;
+    const maxDepthM = Number(n.maxDepthM.toFixed(2));
+    const durationMin = Math.max(b.durationMin, Math.round(n.floodedHours * 60));
+    // Scale velocity with depth as a coarse proxy (real impl: link velocity).
+    const velocityMs = Math.min(2.5, 0.2 + maxDepthM * 0.8);
+    const hazard = classify(maxDepthM, velocityMs);
+    return {
+      ...b,
+      maxDepthM,
+      durationMin,
+      velocityMs,
+      hazard,
+      damageGbp: damage(b.use, maxDepthM, b.area),
+    };
+  });
+  return { merged, matched };
+}
 
 export type FloodSummary = {
   total: number;
