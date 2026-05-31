@@ -41,12 +41,44 @@ const HAZARDS: HazardRating[] = ["low", "moderate", "significant", "extreme"];
 function FloodLensPage() {
   const [activeHazards, setActiveHazards] = useState<Set<HazardRating>>(new Set(HAZARDS));
   const [selected, setSelected] = useState<BuildingAssessment | null>(null);
+  const [buildings, setBuildings] = useState<BuildingAssessment[]>(MOCK_BUILDINGS);
+  const [rptMeta, setRptMeta] = useState<{ name: string; matched: number; continuity: number } | null>(null);
+  const [loadingRpt, setLoadingRpt] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(
-    () => MOCK_BUILDINGS.filter((b) => activeHazards.has(b.hazard)),
-    [activeHazards]
+    () => buildings.filter((b) => activeHazards.has(b.hazard)),
+    [activeHazards, buildings]
   );
   const summary = useMemo(() => summarize(filtered), [filtered]);
+
+  async function handleRptFile(file: File) {
+    setLoadingRpt(true);
+    try {
+      const text = await file.text();
+      const rpt = getProvider().readRpt(text);
+      const { merged, matched } = mergeRptIntoBuildings(MOCK_BUILDINGS, rpt);
+      setBuildings(merged);
+      setSelected(null);
+      setRptMeta({ name: file.name, matched, continuity: rpt.continuityErrorPct });
+      toast(`Loaded ${file.name}`, {
+        description: `${matched}/${MOCK_BUILDINGS.length} buildings matched to nodes · continuity ${rpt.continuityErrorPct.toFixed(2)}%`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast(`Failed to parse ${file.name}`, {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setLoadingRpt(false);
+    }
+  }
+
+  function resetToMock() {
+    setBuildings(MOCK_BUILDINGS);
+    setRptMeta(null);
+    setSelected(null);
+  }
 
   function toggle(h: HazardRating) {
     setActiveHazards((prev) => {
