@@ -9,7 +9,7 @@ const tools = [
   { slug: "scenario-studio", label: "ScenarioStudio" },
 ];
 
-export function AppShell({ children }: { children: RN }) {
+export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
