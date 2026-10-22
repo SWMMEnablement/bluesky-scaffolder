@@ -72,7 +72,7 @@ function Hub() {
             return (
               <Link
                 key={tool.slug}
-                to={`/tools/${tool.slug}`}
+                to={`/tools/${tool.slug}` as "/tools/model-diff"}
                 className={`group relative bg-background p-7 transition-colors hover:bg-surface ${
                   featured ? "md:col-span-2 lg:col-span-2 bg-primary/[0.04]" : ""
                 }`}
